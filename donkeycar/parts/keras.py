@@ -168,7 +168,28 @@ class KerasLinear(KerasPilot):
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
 
+class KerasISI437(KerasPilot):
+    '''
+    Modelo personalizado para el curso de Inteligencia artificial.
+    Las salida de este modelo es una capa lineal con 2 neuronas, una 
+    para la direccion y otra para la aceleracion.
+    '''
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
+        super(KerasISI437, self).__init__(*args, **kwargs)
+        print("Creando modelo ISI437...")
+        self.model = custom_linear(num_outputs, input_shape, roi_crop)
+        self.compile()
 
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                loss='mse')
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[0]
+        throttle = outputs[1]
+        return steering[0][0], throttle[0][0]
 
 class KerasIMU(KerasPilot):
     '''
@@ -313,6 +334,47 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     return model
 
+###################################################################
+# MODELO PERSONALIZADO
+# Se debe implementar el modelo personalizado en esta funcion
+# defina la arquitectura de la red en cuanto al numero de capas,
+# tipo de capas, activaciones y numero de unidades en cada capa
+##################################################################
+def custom_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
+
+    drop = 0.1
+
+    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    input_shape = adjust_input_shape(input_shape, roi_crop)
+    
+    img_in = Input(shape=input_shape, name='img_in')
+    x = img_in
+    #! TODO: Implementar el modelo personalizado en este segmento
+
+    #! ||||               ||||
+    #! vvvv Comenzar aqui vvvv
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Dropout(drop)(x)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu')(x)
+    x = Dropout(drop)(x)
+    #! ^^^^ Terminar aqui ^^^^
+    #! ||||               ||||
+
+    # no es necesario modificar lo siguiente
+    outputs = []
+    
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+        
+    model = Model(inputs=[img_in], outputs=outputs)
+    
+    return model
 
 
 def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):

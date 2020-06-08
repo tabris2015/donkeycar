@@ -36,7 +36,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM, KerasLatent, KerasLocalizer
+     KerasRNN_LSTM, KerasLatent, KerasLocalizer, KerasISI437
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -319,6 +319,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
         train_type = "linear"
     else:
         train_type = model_type
+    
+    if "isi437" in model_type:
+        print("USANDO MODELO CUSTOM ISI437 - ULASALLE")
 
     kl = get_model_by_type(train_type, cfg=cfg)
 
